@@ -12,11 +12,11 @@
 
 | # | 기능 | Method | Path | 담당 | 성공 |
 |---|---|---|---|---|---|
-| 1 | 클라이언트 등록 | POST | `/api/clients` | 권수현 | 201 |
-| 2 | 마스킹 요청 | POST | `/api/chats/{chatId}/maskings` | 권수현 | 204 |
-| 3 | 마스킹 유형 추가/변경 | PUT | `/api/chats/{chatId}/mappings` | 준윤 | 204 |
-| 4 | 언마스킹 | DELETE | `/api/chats/{chatId}/mappings/{maskCode}` | 준윤 | 204 |
-| 5 | 대화 전체 매핑 조회 | GET | `/api/chats/{chatId}/mappings` | 준윤 | 200 |
+| 1 | 클라이언트 등록 | POST | `/api/clients` | 홍길동 | 201 |
+| 2 | 마스킹 요청 | POST | `/api/chats/{chatId}/maskings` | 홍길동 | 204 |
+| 3 | 마스킹 유형 추가/변경 | PUT | `/api/chats/{chatId}/mappings` | 홍길다 | 204 |
+| 4 | 언마스킹 | DELETE | `/api/chats/{chatId}/mappings/{maskCode}` | 홍길다 | 204 |
+| 5 | 대화 전체 매핑 조회 | GET | `/api/chats/{chatId}/mappings` | 홍길다 | 200 |
 
 ---
 
@@ -59,7 +59,7 @@
 **Body**
 ```json
 {
-  "text": "안녕하세요 권수현입니다. 권수현의 번호는 010-1111-1111입니다.",
+  "text": "안녕하세요 홍길동입니다. 홍길동의 번호는 010-1111-1111입니다.",
   "excludeTypes": ["ADDRESS"]
 }
 ```
@@ -87,7 +87,7 @@
 
 **Body**
 ```json
-{ "value": "권수현", "type": "ADDRESS" }
+{ "value": "홍길동", "type": "ADDRESS" }
 ```
 | 필드 | 타입 | 필수 | 설명 |
 |---|---|---|---|
