@@ -1,0 +1,44 @@
+### docs/API.md 1번 — 클라이언트 등록
+### 서버 실행 후 IntelliJ에서 ▶ 로 바로 실행. Redis(localhost:6379)가 떠 있어야 한다.
+### authKey·kek는 openssl rand -base64 32 로 만든 32바이트 Base64 값이다.
+
+### 1. 첫 등록 → 201 Created, body 없음
+POST http://localhost:8080/api/clients
+Content-Type: application/json
+
+{
+  "clientId": "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "authKey": "bQ96vnlmlnlwhOWurEfLzXN+uN+98NKPYxUEEANUHrM=",
+  "kek": "+PdmXoYYFnUDRFypzbZIylXThtiPH9oK/JQ5+ldXPK0="
+}
+
+### 2. 같은 clientId로 다시 등록 → 409 Conflict
+### { "status": 409, "message": "이미 등록된 클라이언트입니다." }
+POST http://localhost:8080/api/clients
+Content-Type: application/json
+
+{
+  "clientId": "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "authKey": "bQ96vnlmlnlwhOWurEfLzXN+uN+98NKPYxUEEANUHrM=",
+  "kek": "+PdmXoYYFnUDRFypzbZIylXThtiPH9oK/JQ5+ldXPK0="
+}
+
+### 3. 형식 오류 예시 (kek가 16바이트) → 400 Bad Request
+POST http://localhost:8080/api/clients
+Content-Type: application/json
+
+{
+  "clientId": "a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "authKey": "bQ96vnlmlnlwhOWurEfLzXN+uN+98NKPYxUEEANUHrM=",
+  "kek": "AAAAAAAAAAAAAAAAAAAAAA=="
+}
+
+### ─────────────────────────────────────────────
+### Redis 저장 결과 확인 (터미널에서)
+###
+###   redis-cli HGETALL client:a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d
+###
+### 기대 필드: authKeyHash(Base64 32바이트), wrappedAesKey(Base64 40바이트), createdAt(ISO-8601)
+### 원문 authKey·kek·AES 키는 어디에도 없어야 한다.
+###
+### 다시 테스트하려면:  redis-cli DEL client:a1b2c3d4-5e6f-4a7b-8c9d-0e1f2a3b4c5d
