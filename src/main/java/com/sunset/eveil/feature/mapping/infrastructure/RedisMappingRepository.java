@@ -1,6 +1,7 @@
 package com.sunset.eveil.feature.mapping.infrastructure;
 
 import com.sunset.eveil.feature.mapping.domain.MappingRepository;
+import com.sunset.eveil.feature.mapping.domain.EncryptedMapping;
 import com.sunset.eveil.feature.mapping.domain.MappingTable;
 import com.sunset.eveil.global.crypto.AesGcmCipher;
 import com.sunset.eveil.global.crypto.EncryptedPayload;
@@ -31,6 +32,16 @@ public class RedisMappingRepository implements MappingRepository {
 	private final StringRedisTemplate redisTemplate;
 	private final AesGcmCipher aesGcmCipher;
 	private final JacksonMappingTableCodec codec;
+
+	@Override
+	public Optional<EncryptedMapping> findByClientIdAndChatId(String clientId, String chatId) {
+		Map<Object, Object> fields = redisTemplate.opsForHash().entries(key(clientId, chatId));
+		if (fields.isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.of(new EncryptedMapping(
+				(String) fields.get(FIELD_IV), (String) fields.get(FIELD_CIPHERTEXT)));
+	}
 
 	@Override
 	public Optional<MappingTable> find(String clientId, String chatId, SecretKey aesKey) {

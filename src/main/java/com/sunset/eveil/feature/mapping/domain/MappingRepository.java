@@ -9,6 +9,9 @@ import javax.crypto.SecretKey;
  */
 public interface MappingRepository {
 
+	/** 복호화 없이 저장된 Base64 암호문을 조회한다. */
+	Optional<EncryptedMapping> findByClientIdAndChatId(String clientId, String chatId);
+
 	/** 없으면 empty. 키가 다르거나 변조되었으면 CryptoException(403). */
 	Optional<MappingTable> find(String clientId, String chatId, SecretKey aesKey);
 
