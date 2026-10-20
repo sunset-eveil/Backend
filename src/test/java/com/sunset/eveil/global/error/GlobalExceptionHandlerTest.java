@@ -49,12 +49,12 @@ class GlobalExceptionHandlerTest {
 	@Test
 	void 예상_못한_예외는_500이고_원문_메시지를_노출하지_않는다() {
 		ResponseEntity<ErrorResponse> response =
-				handler.handleUnexpected(new IllegalStateException("권수현 010-1111-1111"));
+				handler.handleUnexpected(new IllegalStateException("홍길동 010-1111-1111"));
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
 		assertThat(response.getBody().message())
 				.isEqualTo(GlobalExceptionHandler.INTERNAL_ERROR_MESSAGE)
-				.doesNotContain("권수현");
+				.doesNotContain("홍길동");
 	}
 
 	@SuppressWarnings("unused")

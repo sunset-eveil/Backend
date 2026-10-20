@@ -6,9 +6,9 @@
 ```
 com.sunset.eveil
 ├── feature/                 ← 기능(도메인)별 패키지
-│   ├── client/              클라이언트 등록 (권수현)
-│   ├── masking/             마스킹 요청 (권수현)
-│   └── mapping/             매핑 관리 — 유형 변경·언마스킹·조회 (준윤)
+│   ├── client/              클라이언트 등록 (홍길동)
+│   ├── masking/             마스킹 요청 (홍길동)
+│   └── mapping/             매핑 관리 — 유형 변경·언마스킹·조회 (홍길다)
 └── global/                  ← 두 개 이상의 feature가 쓰는 공통 부품
     ├── auth/                ClientAuthInterceptor, AuthenticatedClient, ClientAuthArgumentResolver
     ├── crypto/              AesGcmCipher, KeyWrapper, AesKeyGenerator, Sha256Hasher, CryptoException

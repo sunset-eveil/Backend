@@ -1,0 +1,111 @@
+### docs/API.md 2번 — 마스킹 요청
+### 위에서부터 순서대로 ▶ 실행. 서버 + Redis(localhost:6379) 필요.
+### 이 파일의 clientId는 client.http와 다르므로 둘을 따로 돌려도 충돌하지 않는다.
+
+### 0. 클라이언트 등록 → 201 (이미 등록돼 있으면 409, 그대로 다음 단계 진행)
+POST http://localhost:8080/api/clients
+Content-Type: application/json
+
+{
+  "clientId": "b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d",
+  "authKey": "1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=",
+  "kek": "qJsMuGprtbgXLb92d2wO81hjWzDScRFDLsRKH9ZhSTY="
+}
+
+### 1. 마스킹 요청 (첫 요청 → 매핑 생성) → 204
+### 탐지 기대: PHONE1=010-1234-5678, EMAIL1=kwon@example.com, RRN1=900101-1234568, CARD_ACCOUNT1=4111-1111-1111-1111
+POST http://localhost:8080/api/chats/11111111-2222-4333-8444-555555555555/maskings
+Content-Type: application/json
+X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
+X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
+X-Kek: qJsMuGprtbgXLb92d2wO81hjWzDScRFDLsRKH9ZhSTY=
+
+{
+  "text": "안녕하세요. 제 번호는 010-1234-5678이고 메일은 kwon@example.com 입니다. 주민번호 900101-1234568, 카드 4111-1111-1111-1111 로 결제했어요.",
+  "excludeTypes": []
+}
+
+### 2. 같은 대화에 두 번째 요청 → 204. 010-1234-5678은 PHONE1 유지, 새 번호만 PHONE2
+POST http://localhost:8080/api/chats/11111111-2222-4333-8444-555555555555/maskings
+Content-Type: application/json
+X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
+X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
+X-Kek: qJsMuGprtbgXLb92d2wO81hjWzDScRFDLsRKH9ZhSTY=
+
+{
+  "text": "다시 010-1234-5678 로 연락 주시고, 02-555-1234 는 사무실입니다.",
+  "excludeTypes": ["EMAIL"]
+}
+
+### 3. 틀린 KEK → 403 { "status": 403, "message": "매핑 정보를 열 수 없습니다." }
+POST http://localhost:8080/api/chats/11111111-2222-4333-8444-555555555555/maskings
+Content-Type: application/json
+X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
+X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
+X-Kek: YLorwYYxUaL6JEtB3uEChfEH7+VEKAEdVHt1DPWxa+U=
+
+{
+  "text": "010-1234-5678"
+}
+
+### 4. 빈 텍스트 → 400 "마스킹할 텍스트가 비어 있습니다."
+POST http://localhost:8080/api/chats/11111111-2222-4333-8444-555555555555/maskings
+Content-Type: application/json
+X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
+X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
+X-Kek: qJsMuGprtbgXLb92d2wO81hjWzDScRFDLsRKH9ZhSTY=
+
+{
+  "text": "   "
+}
+
+### 5. 정의되지 않은 excludeTypes → 400 "요청 형식이 올바르지 않습니다."
+POST http://localhost:8080/api/chats/11111111-2222-4333-8444-555555555555/maskings
+Content-Type: application/json
+X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
+X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
+X-Kek: qJsMuGprtbgXLb92d2wO81hjWzDScRFDLsRKH9ZhSTY=
+
+{
+  "text": "010-1234-5678",
+  "excludeTypes": ["UNKNOWN"]
+}
+
+### ─────────────────────────────────────────────
+### Redis 저장 결과 확인 (터미널에서)
+###
+###   redis-cli HGETALL mapping:b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d:11111111-2222-4333-8444-555555555555
+###   redis-cli TTL     mapping:b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d:11111111-2222-4333-8444-555555555555
+###
+### 기대: iv(Base64 12바이트), ciphertext(Base64), updatedAt(ISO-8601) 세 필드만.
+###       "010-1234-5678", "kwon@example.com", "NAME", "PHONE" 같은 평문이 보이면 안 된다.
+###       TTL은 604800(7일) 이하. 2번 요청 후에도 TTL이 늘어나지 않는다.
+###
+### 다시 테스트하려면:
+###   redis-cli DEL mapping:b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d:11111111-2222-4333-8444-555555555555
+
+### ─────────────────────────────────────────────
+### 시연 시나리오 — 고정값(FixedValueDetector) + 정규식(RegexDetector) 합성
+### 0번(등록)이 먼저 실행되어 있어야 한다. 새 chatId를 쓰므로 위 요청들과 섞이지 않는다.
+
+### 6. 마스킹 요청 → 204. 기대 매핑: NAME1=홍길동, PHONE1=010-1234-5678
+POST http://localhost:8080/api/chats/22222222-3333-4444-8555-666666666666/maskings
+Content-Type: application/json
+X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
+X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
+X-Kek: qJsMuGprtbgXLb92d2wO81hjWzDScRFDLsRKH9ZhSTY=
+
+{
+  "text": "안녕하세요 홍길동입니다. 연락처는 010-1234-5678"
+}
+
+### 7. 매핑 조회 (GET /api/chats/{chatId}/mappings) — 담당자 구현 후 주석 해제
+### 기대: wrappedAesKey, iv, ciphertext 반환. 클라이언트가 KEK로 풀어 NAME1·PHONE1 확인.
+# GET http://localhost:8080/api/chats/22222222-3333-4444-8555-666666666666/mappings
+# X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
+# X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
+
+### Redis 확인 (터미널에서)
+###   redis-cli HGETALL mapping:b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d:22222222-3333-4444-8555-666666666666
+### 기대: iv·ciphertext·updatedAt만. "홍길동", "010-1234-5678", "NAME" 평문이 보이면 안 된다.
+### 초기화:  redis-cli DEL mapping:b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d:22222222-3333-4444-8555-666666666666
