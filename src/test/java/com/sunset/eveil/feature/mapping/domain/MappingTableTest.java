@@ -11,6 +11,18 @@ import org.junit.jupiter.api.Test;
 class MappingTableTest {
 
 	@Test
+	void 유형_변경은_새_번호를_부여하고_이전_번호를_재사용하지_않는다() {
+		MappingTable table = MappingTable.empty();
+		table.assign("홍길동", MaskingType.NAME);
+		table.assign("서울", MaskingType.ADDRESS);
+		assertThat(table.changeType("  홍길동  ", MaskingType.ADDRESS).text()).isEqualTo("ADDRESS2");
+		assertThat(table.findByMaskCode(MaskCode.parse("NAME1"))).isEmpty();
+		assertThat(table.changeType("홍길동", MaskingType.ADDRESS).text()).isEqualTo("ADDRESS2");
+		assertThat(table.changeType("홍길동", MaskingType.NAME).text()).isEqualTo("NAME2");
+		assertThat(table.mappings()).hasSize(2);
+	}
+
+	@Test
 	void 새_값은_유형별로_1부터_번호를_받는다() {
 		MappingTable table = MappingTable.empty();
 

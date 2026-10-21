@@ -35,10 +35,17 @@ public class GlobalExceptionHandler {
 
 	@ExceptionHandler({
 			MethodArgumentNotValidException.class,
-			HttpMessageNotReadableException.class,
 			MethodArgumentTypeMismatchException.class
 	})
 	public ResponseEntity<ErrorResponse> handleInvalidRequest(Exception e) {
+		return respond(HttpStatus.BAD_REQUEST, INVALID_REQUEST_MESSAGE);
+	}
+
+	@ExceptionHandler(HttpMessageNotReadableException.class)
+	public ResponseEntity<ErrorResponse> handleUnreadableRequest(HttpMessageNotReadableException e) {
+		if (e.getMostSpecificCause() instanceof BusinessException businessException) {
+			return handleBusiness(businessException);
+		}
 		return respond(HttpStatus.BAD_REQUEST, INVALID_REQUEST_MESSAGE);
 	}
 
