@@ -104,6 +104,12 @@ class MaskTextServiceTest {
 	/** 암호화 없이 평문 테이블을 들고 있는 가짜 저장소. 저장 시 넘어온 AES 키를 기록한다. */
 	static class InMemoryMappingRepository implements MappingRepository {
 
+		@Override
+		public Optional<com.sunset.eveil.feature.mapping.domain.EncryptedMapping> findByClientIdAndChatId(
+				String clientId, String chatId) {
+			throw new UnsupportedOperationException("Masking tests do not read encrypted mappings");
+		}
+
 		final Map<String, MappingTable> stored = new HashMap<>();
 		final java.util.List<SecretKey> savedWithKeys = new java.util.ArrayList<>();
 
