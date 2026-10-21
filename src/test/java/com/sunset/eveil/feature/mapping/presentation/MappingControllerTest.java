@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.mockito.Mockito.*;
 import com.sunset.eveil.feature.mapping.application.UnmaskMappingService;
+import com.sunset.eveil.feature.mapping.application.UpdateMappingTypeService;
 import com.sunset.eveil.feature.mapping.domain.MappingTable;
 import com.sunset.eveil.global.crypto.AesKeyGenerator;
 import com.sunset.eveil.global.crypto.KeyWrapper;
@@ -46,7 +47,9 @@ class MappingControllerTest {
 				: Optional.empty();
 		mvc = MockMvcBuilders.standaloneSetup(new MappingController(new GetMappingService(repository),
 				new UnmaskMappingService(repository,
-						new KeyWrapper(), new ChatLockManager())))
+						new KeyWrapper(), new ChatLockManager()),
+				new UpdateMappingTypeService(
+						repository, new KeyWrapper(), new ChatLockManager())))
 				.setCustomArgumentResolvers(new ClientAuthArgumentResolver())
 				.addInterceptors(new ClientAuthInterceptor(credentials, hasher))
 				.setControllerAdvice(new GlobalExceptionHandler()).build();
@@ -177,5 +180,66 @@ class MappingControllerTest {
 	private MockHttpServletRequestBuilder authenticated(String chatId) {
 		return get("/api/chats/{chatId}/mappings", chatId).header(AuthHeaders.CLIENT_ID, CLIENT_ID)
 				.header(AuthHeaders.AUTH_KEY, Base64.getEncoder().encodeToString(AUTH_KEY));
+	}
+
+	@Test
+	void PUT은_새_매핑을_생성하고_값을_trim한다() throws Exception {
+		when(repository.find(eq(CLIENT_ID), eq(CHAT_ID), any())).thenReturn(Optional.empty());
+		mvc.perform(putRequest("{\"value\":\"  홍길동  \",\"type\":\"NAME\"}"))
+				.andExpect(status().isNoContent()).andExpect(content().string(""));
+		var captor = org.mockito.ArgumentCaptor.forClass(MappingTable.class);
+		verify(repository).save(eq(CLIENT_ID), eq(CHAT_ID), captor.capture(), any());
+		assertThat(captor.getValue().findByValue("홍길동"))
+				.map(mapping -> mapping.maskCode().text()).contains("NAME1");
+	}
+
+	@Test
+	void PUT은_기존_유형을_변경한다() throws Exception {
+		var table = MappingTable.empty();
+		table.assign("홍길동", MaskingType.NAME);
+		when(repository.find(eq(CLIENT_ID), eq(CHAT_ID), any())).thenReturn(Optional.of(table));
+		mvc.perform(putRequest("{\"value\":\"홍길동\",\"type\":\"ADDRESS\"}"))
+				.andExpect(status().isNoContent());
+		assertThat(table.findByValue("홍길동")).map(mapping -> mapping.maskCode().text()).contains("ADDRESS1");
+		verify(repository).save(eq(CLIENT_ID), eq(CHAT_ID), same(table), any());
+	}
+
+	@Test
+	void PUT은_빈값과_미정의_유형을_거부한다() throws Exception {
+		mvc.perform(putRequest("{\"value\":\"   \",\"type\":\"NAME\"}"))
+				.andExpect(status().isBadRequest())
+				.andExpect(jsonPath("$.message").value("지정할 값이 비어 있습니다."));
+		for (String body : new String[] {"{}", "{\"value\":\"홍길동\"}",
+				"{\"value\":\"홍길동\",\"type\":\"UNKNOWN\"}"}) {
+			mvc.perform(putRequest(body)).andExpect(status().isBadRequest());
+		}
+		verifyNoInteractions(repository);
+	}
+
+	@Test
+	void PUT은_인증과_KEK를_검증한다() throws Exception {
+		String body = "{\"value\":\"홍길동\",\"type\":\"NAME\"}";
+		mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+				.put("/api/chats/{chatId}/mappings", CHAT_ID)
+				.contentType("application/json").content(body)).andExpect(status().isUnauthorized());
+		mvc.perform(putRequest(body, "invalid!!"))
+				.andExpect(status().isBadRequest());
+		byte[] wrongKek = new byte[32];
+		wrongKek[0] = 1;
+		mvc.perform(putRequest(body, Base64.getEncoder().encodeToString(wrongKek)))
+				.andExpect(status().isForbidden());
+		verifyNoInteractions(repository);
+	}
+
+	private MockHttpServletRequestBuilder putRequest(String body) {
+		return putRequest(body, Base64.getEncoder().encodeToString(kek));
+	}
+
+	private MockHttpServletRequestBuilder putRequest(String body, String kekBase64) {
+		return org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+				.put("/api/chats/{chatId}/mappings", CHAT_ID)
+				.header(AuthHeaders.CLIENT_ID, CLIENT_ID)
+				.header(AuthHeaders.AUTH_KEY, Base64.getEncoder().encodeToString(AUTH_KEY))
+				.header(AuthHeaders.KEK, kekBase64).contentType("application/json").content(body);
 	}
 }

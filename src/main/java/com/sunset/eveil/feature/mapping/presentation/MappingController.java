@@ -2,6 +2,11 @@ package com.sunset.eveil.feature.mapping.presentation;
 
 import com.sunset.eveil.feature.mapping.application.GetMappingService;
 import com.sunset.eveil.feature.mapping.application.UnmaskMappingService;
+import com.sunset.eveil.feature.mapping.application.UpdateMappingTypeService;
+import com.sunset.eveil.feature.mapping.presentation.dto.UpdateMappingTypeRequest;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import com.sunset.eveil.feature.mapping.domain.MaskCode;
 import com.sunset.eveil.feature.mapping.exception.InvalidMaskCodeException;
 import com.sunset.eveil.global.auth.AuthHeaders;
@@ -28,6 +33,17 @@ public class MappingController {
 
 	private final GetMappingService getMappingService;
 	private final UnmaskMappingService unmaskMappingService;
+	private final UpdateMappingTypeService updateMappingTypeService;
+
+	@PutMapping
+	public ResponseEntity<Void> updateMappingType(
+			@PathVariable UUID chatId, AuthenticatedClient client,
+			@RequestHeader(AuthHeaders.KEK) String kekBase64,
+			@Valid @RequestBody UpdateMappingTypeRequest request) {
+		updateMappingTypeService.execute(client, chatId.toString(), request.value(), request.type(),
+				Kek.fromBase64(kekBase64).bytes());
+		return ResponseEntity.noContent().build();
+	}
 
 	@DeleteMapping("/{maskCode}")
 	public ResponseEntity<Void> unmaskMapping(

@@ -50,6 +50,17 @@ public class MappingTable {
 		return code;
 	}
 
+	/** 같은 유형은 기존 코드를 유지하고, 유형이 바뀌면 새 유형의 다음 번호를 배정한다. */
+	public MaskCode changeType(String rawValue, MaskingType type) {
+		if (type == null) {
+			throw new IllegalArgumentException("type must not be null");
+		}
+		String value = requireText(rawValue);
+		findByValue(value).filter(mapping -> mapping.maskCode().type() != type)
+				.ifPresent(mapping -> remove(mapping.maskCode()));
+		return assign(value, type);
+	}
+
 	public Optional<Mapping> findByValue(String value) {
 		return mappings.stream().filter(mapping -> mapping.value().equals(value)).findFirst();
 	}
