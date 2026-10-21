@@ -58,6 +58,11 @@ public class MappingTable {
 		return mappings.stream().filter(mapping -> mapping.maskCode().equals(maskCode)).findFirst();
 	}
 
+	/** 번호 카운터는 유지해 삭제된 코드를 재사용하지 않는다. */
+	public boolean remove(MaskCode maskCode) {
+		return mappings.removeIf(mapping -> mapping.maskCode().equals(maskCode));
+	}
+
 	public List<Mapping> mappings() {
 		return Collections.unmodifiableList(mappings);
 	}

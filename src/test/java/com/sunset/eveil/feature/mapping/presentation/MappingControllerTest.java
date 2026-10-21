@@ -1,6 +1,15 @@
 package com.sunset.eveil.feature.mapping.presentation;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.mockito.Mockito.*;
+import com.sunset.eveil.feature.mapping.application.UnmaskMappingService;
+import com.sunset.eveil.feature.mapping.domain.MappingTable;
+import com.sunset.eveil.global.crypto.AesKeyGenerator;
+import com.sunset.eveil.global.crypto.KeyWrapper;
+import com.sunset.eveil.global.lock.ChatLockManager;
+import com.sunset.eveil.global.mask.MaskingType;
+import javax.crypto.SecretKey;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -25,14 +34,19 @@ class MappingControllerTest {
 	private static final byte[] AUTH_KEY = new byte[] {1, 2, 3};
 	private final MappingRepository repository = mock(MappingRepository.class);
 	private MockMvc mvc;
+	private final byte[] kek = new byte[32];
+	private final SecretKey aesKey = new AesKeyGenerator().generate();
+	private final byte[] wrappedAesKey = new KeyWrapper().wrap(kek, aesKey);
 
 	@BeforeEach
 	void setUp() {
 		Sha256Hasher hasher = new Sha256Hasher();
 		ClientCredentialsPort credentials = clientId -> CLIENT_ID.equals(clientId)
-				? Optional.of(new ClientCredentials(CLIENT_ID, hasher.hash(AUTH_KEY), new byte[40]))
+				? Optional.of(new ClientCredentials(CLIENT_ID, hasher.hash(AUTH_KEY), wrappedAesKey))
 				: Optional.empty();
-		mvc = MockMvcBuilders.standaloneSetup(new MappingController(new GetMappingService(repository)))
+		mvc = MockMvcBuilders.standaloneSetup(new MappingController(new GetMappingService(repository),
+				new UnmaskMappingService(repository,
+						new KeyWrapper(), new ChatLockManager())))
 				.setCustomArgumentResolvers(new ClientAuthArgumentResolver())
 				.addInterceptors(new ClientAuthInterceptor(credentials, hasher))
 				.setControllerAdvice(new GlobalExceptionHandler()).build();
@@ -44,7 +58,7 @@ class MappingControllerTest {
 				.thenReturn(Optional.of(new EncryptedMapping("aXY=", "Y2lwaGVydGV4dA==")));
 		mvc.perform(authenticated(CHAT_ID)).andExpect(status().isOk())
 				.andExpect(header().string("Cache-Control", "no-store"))
-				.andExpect(jsonPath("$.wrappedAesKey").value(Base64.getEncoder().encodeToString(new byte[40])))
+				.andExpect(jsonPath("$.wrappedAesKey").value(Base64.getEncoder().encodeToString(wrappedAesKey)))
 				.andExpect(jsonPath("$.iv").value("aXY="))
 				.andExpect(jsonPath("$.ciphertext").value("Y2lwaGVydGV4dA=="));
 		verify(repository).findByClientIdAndChatId(CLIENT_ID, CHAT_ID);
@@ -102,6 +116,62 @@ class MappingControllerTest {
 				.thenThrow(new IllegalStateException("sensitive storage details"));
 		mvc.perform(authenticated(CHAT_ID)).andExpect(status().isInternalServerError())
 				.andExpect(jsonPath("$.message").value("서버 내부 오류가 발생했습니다."));
+	}
+
+	@Test
+	void 삭제는_204이고_카운터를_유지한_매핑을_저장한다() throws Exception {
+		var table = MappingTable.empty();
+		table.assign("홍길동", MaskingType.NAME);
+		when(repository.find(eq(CLIENT_ID), eq(CHAT_ID), any())).thenReturn(Optional.of(table));
+		mvc.perform(deleteRequest("NAME1")).andExpect(status().isNoContent()).andExpect(content().string(""));
+		assertThat(table.isEmpty()).isTrue();
+		assertThat(table.assign("홍길동", MaskingType.NAME).text())
+				.isEqualTo("NAME2");
+		verify(repository).save(eq(CLIENT_ID), eq(CHAT_ID), same(table), any());
+	}
+
+	@Test
+	void 대화나_코드가_없으면_404이고_저장하지_않는다() throws Exception {
+		when(repository.find(eq(CLIENT_ID), eq(CHAT_ID), any())).thenReturn(Optional.empty());
+		mvc.perform(deleteRequest("NAME1")).andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.message").value("해당 마스킹 정보를 찾을 수 없습니다."));
+		when(repository.find(eq(CLIENT_ID), eq(CHAT_ID), any()))
+				.thenReturn(Optional.of(MappingTable.empty()));
+		mvc.perform(deleteRequest("NAME1")).andExpect(status().isNotFound());
+		verify(repository, never()).save(any(), any(), any(), any());
+	}
+
+	@Test
+	void 잘못된_코드는_400이고_저장소를_호출하지_않는다() throws Exception {
+		for (String code : new String[] {"name1", "NAME0", "UNKNOWN1", "NAME99999999999999999", "NAME01"}) {
+			mvc.perform(deleteRequest(code)).andExpect(status().isBadRequest())
+					.andExpect(jsonPath("$.message").value("마스킹 코드 형식이 올바르지 않습니다."));
+		}
+		verifyNoInteractions(repository);
+	}
+
+	@Test
+	void 삭제_인증과_KEK를_검증한다() throws Exception {
+		mvc.perform(delete(
+				"/api/chats/{chatId}/mappings/NAME1", CHAT_ID)).andExpect(status().isUnauthorized());
+		mvc.perform(deleteRequest("NAME1", "invalid!!")).andExpect(status().isBadRequest());
+		byte[] wrongKek = new byte[32];
+		wrongKek[0] = 1;
+		var request = deleteRequest("NAME1", Base64.getEncoder().encodeToString(wrongKek));
+		mvc.perform(request).andExpect(status().isForbidden());
+		verifyNoInteractions(repository);
+	}
+
+	private MockHttpServletRequestBuilder deleteRequest(String code) {
+		return deleteRequest(code, Base64.getEncoder().encodeToString(kek));
+	}
+
+	private MockHttpServletRequestBuilder deleteRequest(String code, String kekBase64) {
+		return delete(
+				"/api/chats/{chatId}/mappings/{maskCode}", CHAT_ID, code)
+				.header(AuthHeaders.CLIENT_ID, CLIENT_ID)
+				.header(AuthHeaders.AUTH_KEY, Base64.getEncoder().encodeToString(AUTH_KEY))
+				.header(AuthHeaders.KEK, kekBase64);
 	}
 
 	private MockHttpServletRequestBuilder authenticated(String chatId) {
