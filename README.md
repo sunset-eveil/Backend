@@ -6,6 +6,8 @@
 
 ## 환경 설정과 실행
 
+입력할 값은 [한 페이지 PDF 안내](output/pdf/frontend-env-guide.pdf)에서도 확인할 수 있습니다.
+
 프로젝트 루트에서 실행합니다. `application.yaml`이 루트의 `.env`를 자동으로 읽으며,
 같은 이름의 운영체제 환경변수가 있으면 환경변수가 우선합니다.
 `.env`는 Java properties 형식이므로 값에 따옴표나 `export`를 넣지 마세요.
@@ -13,6 +15,18 @@
 ```powershell
 Copy-Item .env.example .env
 ```
+
+기본 로컬 환경에서는 **두 값만 입력**하면 됩니다.
+
+| 필수 값 | 넣을 내용 |
+|---|---|
+| `CORS_ALLOWED_ORIGINS` | 실제 프론트 origin 또는 `chrome-extension://확장ID` |
+| `SERVER_SSL_KEY_STORE_PASSWORD` | 아래에서 생성한 인증서의 비밀번호 |
+
+Redis는 기본 `localhost:6379`, 비밀번호 없음입니다. 다를 때만 `.env.example`의
+`REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD` 주석을 풀어 변경하세요.
+Redis ACL/TLS 등 추가 설정이 필요하면 Spring 기본 환경변수
+`SPRING_DATA_REDIS_USERNAME`, `SPRING_DATA_REDIS_SSL_ENABLED`를 실행 환경에 지정할 수 있습니다.
 
 `.env`에서 `CORS_ALLOWED_ORIGINS`를 실제 프론트 주소로 바꿉니다.
 여러 주소는 쉼표로 구분하며 경로와 마지막 `/`는 제외합니다.

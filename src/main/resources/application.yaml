@@ -7,15 +7,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      username: ${REDIS_USERNAME:}
       password: ${REDIS_PASSWORD:}
-      database: ${REDIS_DATABASE:0}
-      connect-timeout: ${REDIS_CONNECT_TIMEOUT:5s}
-      timeout: ${REDIS_TIMEOUT:3s}
-      ssl:
-        enabled: ${REDIS_SSL_ENABLED:false}
-  mvc:
-    log-request-details: false
 
 server:
   address: ${SERVER_ADDRESS:127.0.0.1}
