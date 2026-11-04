@@ -9,3 +9,9 @@ build/
 
 # OS
 .DS_Store
+
+# Local configuration and TLS keys
+.env
+.env.*
+!.env.example
+certs/
