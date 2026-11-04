@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Primary
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.masking.detector", havingValue = "demo")
 public class CompositeDetector implements Detector {
 
 	private final List<Detector> detectors;

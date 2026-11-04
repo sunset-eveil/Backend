@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-> Claude Code용 컨텍스트 문서. 아래 내용은 팀에서 **확정된 결정**만 담고 있다.
+> Codex용 프로젝트 지침. 이 파일은 저장소 전체에 적용한다. 아래 내용은 팀에서 **확정된 결정**만 담고 있다.
 
 > 여기에 없는 사항은 임의로 정하지 말고 "미결정 사항" 섹션을 보거나 질문할 것.
 
@@ -8,7 +8,7 @@
 
 ## 1. 서비스 요약
 
-사용자가 AI(ChatGPT 등)에 보낼 텍스트에서 개인정보를 탐지해 `NAME1`, `PHONE1` 같은 **마스킹 코드**로 치환하고, 그 매핑(`NAME1 = 홍길동`)을 **서버가 암호화해 보관**하는 크롬 확장 프로그램의 백엔드다.
+사용자가 AI(ChatGPT 등)에 보낼 텍스트에서 개인정보를 탐지해 `NAME1`, `PHONE1` 같은 **마스킹 코드**로 치환하고, 그 매핑(`NAME1 = 권수현`)을 **서버가 암호화해 보관**하는 크롬 확장 프로그램의 백엔드다.
 
 - 비회원 서비스. 로그인 없이 `clientId` + `authKey`로 클라이언트를 구분·인증한다.
 - 핵심 보안 원칙: **서버 단독으로는 저장된 매핑을 절대 복호화할 수 없다.** 복호화에 필요한 KEK는 클라이언트가 요청 시에만 보내고, 서버는 처리 후 즉시 폐기한다.
@@ -90,7 +90,7 @@ mapping:{clientId}:{chatId}   (TTL 7일)
 ```json
 {
   "mappings": [
-    { "maskCode": "NAME1", "type": "NAME", "value": "홍길동" },
+    { "maskCode": "NAME1", "type": "NAME", "value": "권수현" },
     { "maskCode": "PHONE1", "type": "PHONE", "value": "010-1111-1111" }
   ],
   "counters": { "NAME": 1, "PHONE": 1 }
@@ -143,7 +143,7 @@ mapping:{clientId}:{chatId}   (TTL 7일)
 
 | 규칙 | 내용 |
 |---|---|
-| 같은 값 = 같은 코드 | `홍길동`이 여러 번 나와도 전부 `NAME1`. 언마스킹도 코드 단위라 전체 해제 |
+| 같은 값 = 같은 코드 | `권수현`이 여러 번 나와도 전부 `NAME1`. 언마스킹도 코드 단위라 전체 해제 |
 | 번호는 서버가 부여 | 탐지기는 `(value, type)`만 반환. 번호는 `counters`로 서버가 매김 |
 | 대화별 번호 | `chatId`마다 `NAME1`부터 시작 |
 | 기존 값 재사용 | 이미 매핑된 값은 기존 코드 유지, 새 값만 다음 번호 |
@@ -183,8 +183,8 @@ Detector (인터페이스): detect(text, excludeTypes) → List<(value, type)>
 ## 7. API 명세
 
 **→ `docs/API.md` 참고.** 구현 전 반드시 해당 API 섹션을 읽을 것.
-- (항상 읽을 필요는 없어 `@` import 하지 않음. 
-  - 작업 지시 시 "docs/API.md N번"으로 지정)
+- API 명세는 구현할 기능에 해당하는 섹션을 읽는다.
+  - 작업 지시 시 "docs/API.md N번"으로 지정할 수 있다.
 
 공통 사항 요약:
 - Base path: `/api`
@@ -235,4 +235,4 @@ Detector (인터페이스): detect(text, excludeTypes) → List<(value, type)>
 
 ## 11. 코드 컨벤션
 
-@docs/CONVENTION.md
+코드를 작성하거나 수정하기 전에 `docs/CONVENTION.md`를 읽고 따른다.

@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 /** Spring이 Detector 주입 지점에 @Primary CompositeDetector를 고르고, 고정값·정규식 둘 다 포함하는지 확인. */
-@SpringBootTest
+@SpringBootTest(properties = "app.masking.detector=demo")
 class DetectorWiringTest {
 
 	@Autowired
