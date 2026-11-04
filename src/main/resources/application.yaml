@@ -1,7 +1,23 @@
 spring:
+  config:
+    import: optional:file:./.env[.properties]
   application:
     name: eveil
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8443}
+  ssl:
+    enabled: ${SERVER_SSL_ENABLED:true}
+    key-store: ${SERVER_SSL_KEY_STORE:file:./certs/local.p12}
+    key-store-type: PKCS12
+    key-store-password: ${SERVER_SSL_KEY_STORE_PASSWORD:}
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}

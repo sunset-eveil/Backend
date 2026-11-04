@@ -7,6 +7,7 @@ import java.util.Base64;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.web.cors.CorsUtils;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
@@ -27,6 +28,9 @@ public class ClientAuthInterceptor implements HandlerInterceptor {
 
 	@Override
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+		if (CorsUtils.isPreFlightRequest(request)) {
+			return true;
+		}
 		String clientId = request.getHeader(AuthHeaders.CLIENT_ID);
 		String authKeyBase64 = request.getHeader(AuthHeaders.AUTH_KEY);
 		if (clientId == null || authKeyBase64 == null) {
