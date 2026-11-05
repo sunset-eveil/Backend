@@ -7,14 +7,17 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.Objects;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
 /**
  * AI의 코드 포인트 위치·유형을 기존 탐지 결과로 변환한다.
  * 기본 탐지기이며 demo 모드에서는 등록하지 않는다.
  */
-@org.springframework.stereotype.Component
-@org.springframework.context.annotation.Primary
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.masking.detector", havingValue = "ai", matchIfMissing = true)
+@Component
+@Primary
+@ConditionalOnProperty(name = "app.masking.detector", havingValue = "ai", matchIfMissing = true)
 public class AiDetector implements Detector {
 
 	private final AiInferenceClient client;
