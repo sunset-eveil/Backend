@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.context.annotation.Primary;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Primary
+@ConditionalOnProperty(name = "app.masking.detector", havingValue = "demo")
 public class CompositeDetector implements Detector {
 
 	private final List<Detector> detectors;

@@ -19,5 +19,10 @@ server:
     key-store-password: ${SERVER_SSL_KEY_STORE_PASSWORD:}
 
 app:
+  masking:
+    detector: ${MASKING_DETECTOR:ai}
+  ai:
+    base-url: ${AI_BASE_URL:http://127.0.0.1:8000}
+    timeout: ${AI_TIMEOUT:30s}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:}

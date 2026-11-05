@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-> Claude Code용 컨텍스트 문서. 아래 내용은 팀에서 **확정된 결정**만 담고 있다.
+> Codex용 프로젝트 지침. 이 파일은 저장소 전체에 적용한다. 아래 내용은 팀에서 **확정된 결정**만 담고 있다.
 
 > 여기에 없는 사항은 임의로 정하지 말고 "미결정 사항" 섹션을 보거나 질문할 것.
 
@@ -183,8 +183,8 @@ Detector (인터페이스): detect(text, excludeTypes) → List<(value, type)>
 ## 7. API 명세
 
 **→ `docs/API.md` 참고.** 구현 전 반드시 해당 API 섹션을 읽을 것.
-- (항상 읽을 필요는 없어 `@` import 하지 않음. 
-  - 작업 지시 시 "docs/API.md N번"으로 지정)
+- API 명세는 구현할 기능에 해당하는 섹션을 읽는다.
+  - 작업 지시 시 "docs/API.md N번"으로 지정할 수 있다.
 
 공통 사항 요약:
 - Base path: `/api`
@@ -235,4 +235,4 @@ Detector (인터페이스): detect(text, excludeTypes) → List<(value, type)>
 
 ## 11. 코드 컨벤션
 
-@docs/CONVENTION.md
+코드를 작성하거나 수정하기 전에 `docs/CONVENTION.md`를 읽고 따른다.
