@@ -3,7 +3,7 @@
 ### 이 파일의 clientId는 client.http와 다르므로 둘을 따로 돌려도 충돌하지 않는다.
 
 ### 0. 클라이언트 등록 → 201 (이미 등록돼 있으면 409, 그대로 다음 단계 진행)
-POST http://localhost:8080/api/clients
+POST https://localhost:8443/api/clients
 Content-Type: application/json
 
 {
@@ -14,7 +14,7 @@ Content-Type: application/json
 
 ### 1. 마스킹 요청 (첫 요청 → 매핑 생성) → 204
 ### 탐지 기대: PHONE1=010-1234-5678, EMAIL1=kwon@example.com, RRN1=900101-1234568, CARD_ACCOUNT1=4111-1111-1111-1111
-POST http://localhost:8080/api/chats/11111111-2222-4333-8444-555555555555/maskings
+POST https://localhost:8443/api/chats/11111111-2222-4333-8444-555555555555/maskings
 Content-Type: application/json
 X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
 X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
@@ -26,7 +26,7 @@ X-Kek: qJsMuGprtbgXLb92d2wO81hjWzDScRFDLsRKH9ZhSTY=
 }
 
 ### 2. 같은 대화에 두 번째 요청 → 204. 010-1234-5678은 PHONE1 유지, 새 번호만 PHONE2
-POST http://localhost:8080/api/chats/11111111-2222-4333-8444-555555555555/maskings
+POST https://localhost:8443/api/chats/11111111-2222-4333-8444-555555555555/maskings
 Content-Type: application/json
 X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
 X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
@@ -38,7 +38,7 @@ X-Kek: qJsMuGprtbgXLb92d2wO81hjWzDScRFDLsRKH9ZhSTY=
 }
 
 ### 3. 틀린 KEK → 403 { "status": 403, "message": "매핑 정보를 열 수 없습니다." }
-POST http://localhost:8080/api/chats/11111111-2222-4333-8444-555555555555/maskings
+POST https://localhost:8443/api/chats/11111111-2222-4333-8444-555555555555/maskings
 Content-Type: application/json
 X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
 X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
@@ -49,7 +49,7 @@ X-Kek: YLorwYYxUaL6JEtB3uEChfEH7+VEKAEdVHt1DPWxa+U=
 }
 
 ### 4. 빈 텍스트 → 400 "마스킹할 텍스트가 비어 있습니다."
-POST http://localhost:8080/api/chats/11111111-2222-4333-8444-555555555555/maskings
+POST https://localhost:8443/api/chats/11111111-2222-4333-8444-555555555555/maskings
 Content-Type: application/json
 X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
 X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
@@ -60,7 +60,7 @@ X-Kek: qJsMuGprtbgXLb92d2wO81hjWzDScRFDLsRKH9ZhSTY=
 }
 
 ### 5. 정의되지 않은 excludeTypes → 400 "요청 형식이 올바르지 않습니다."
-POST http://localhost:8080/api/chats/11111111-2222-4333-8444-555555555555/maskings
+POST https://localhost:8443/api/chats/11111111-2222-4333-8444-555555555555/maskings
 Content-Type: application/json
 X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
 X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
@@ -89,7 +89,7 @@ X-Kek: qJsMuGprtbgXLb92d2wO81hjWzDScRFDLsRKH9ZhSTY=
 ### 0번(등록)이 먼저 실행되어 있어야 한다. 새 chatId를 쓰므로 위 요청들과 섞이지 않는다.
 
 ### 6. 마스킹 요청 → 204. 기대 매핑: NAME1=홍길동, PHONE1=010-1234-5678
-POST http://localhost:8080/api/chats/22222222-3333-4444-8555-666666666666/maskings
+POST https://localhost:8443/api/chats/22222222-3333-4444-8555-666666666666/maskings
 Content-Type: application/json
 X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
 X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
@@ -101,7 +101,7 @@ X-Kek: qJsMuGprtbgXLb92d2wO81hjWzDScRFDLsRKH9ZhSTY=
 
 ### 7. 매핑 조회 (GET /api/chats/{chatId}/mappings) — 담당자 구현 후 주석 해제
 ### 기대: wrappedAesKey, iv, ciphertext 반환. 클라이언트가 KEK로 풀어 NAME1·PHONE1 확인.
-# GET http://localhost:8080/api/chats/22222222-3333-4444-8555-666666666666/mappings
+# GET https://localhost:8443/api/chats/22222222-3333-4444-8555-666666666666/mappings
 # X-Client-Id: b2c3d4e5-6f70-4a8b-9c0d-1e2f3a4b5c6d
 # X-Auth-Key: 1HOyqwlzQOqbfT7KY60qovkb3c71uq6XNWC3ILDD4mo=
 
