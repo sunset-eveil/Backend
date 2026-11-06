@@ -33,6 +33,14 @@ class AiDetectorTest {
 	}
 
 	@Test
+	void 금액을_추출하고_제외유형을_적용한다() {
+		AiDetector detector = new AiDetector(text -> List.of(new AiDetectedSpan(6, 13, "AMOUNT")));
+		assertThat(detector.detect("결제 금액 50,000원", Set.of()))
+				.containsExactly(new DetectedEntity("50,000원", MaskingType.AMOUNT));
+		assertThat(detector.detect("결제 금액 50,000원", Set.of(MaskingType.AMOUNT))).isEmpty();
+	}
+
+	@Test
 	void 잘못된_범위와_유형은_실패한다() {
 		AiDetector invalidRange = new AiDetector(text -> List.of(new AiDetectedSpan(0, 4, "NAME")));
 		AiDetector invalidType = new AiDetector(text -> List.of(new AiDetectedSpan(0, 3, "OTHER")));

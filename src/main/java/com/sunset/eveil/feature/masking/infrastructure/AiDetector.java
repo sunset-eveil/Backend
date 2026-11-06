@@ -42,6 +42,7 @@ public class AiDetector implements Detector {
 						case "ACCOUNT", "CARD" -> MaskingType.CARD_ACCOUNT;
 						case "RRN" -> MaskingType.RRN;
 						case "EMAIL" -> MaskingType.EMAIL;
+						case "AMOUNT" -> MaskingType.AMOUNT;
 						default -> throw new IllegalArgumentException("Invalid AI detection type");
 					};
 					int start = text.offsetByCodePoints(0, span.start());
